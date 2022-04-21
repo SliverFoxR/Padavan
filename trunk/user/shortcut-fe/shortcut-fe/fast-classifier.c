@@ -33,6 +33,7 @@
 #include <net/genetlink.h>
 #include <linux/spinlock.h>
 #include <linux/if_bridge.h>
+#include <net/pkt_sched.h>
 #include <linux/hashtable.h>
 
 #include "sfe_backport.h"
@@ -227,6 +228,16 @@ int fast_classifier_recv(struct sk_buff *skb)
 		}
 		dev = master_dev;
 	}
+
+#ifdef CONFIG_NET_CLS_ACT
+	/*
+	 * If ingress Qdisc configured, and packet not processed by ingress Qdisc yet
+	 * We cannot accelerate this packet.
+	 */
+	if (dev->ingress_queue && !(skb->tc_verd & TC_NCLS)) {
+		goto rx_exit;
+	}
+#endif
 
 	/*
 	 * We're only interested in IPv4 and IPv6 packets.
@@ -523,18 +534,14 @@ static void fast_classifier_send_genl_msg(int msg, struct fast_classifier_tuple 
 #endif
 	switch (msg) {
 	case FAST_CLASSIFIER_C_OFFLOADED:
-		if (rc == 0) {
-			atomic_inc(&offloaded_msgs);
-		} else {
+		atomic_inc(&offloaded_msgs);
+		if (rc != 0)
 			atomic_inc(&offloaded_fail_msgs);
-		}
 		break;
 	case FAST_CLASSIFIER_C_DONE:
-		if (rc == 0) {
-			atomic_inc(&done_msgs);
-		} else {
+		atomic_inc(&done_msgs);
+		if (rc != 0)
 			atomic_inc(&done_fail_msgs);
-		}
 		break;
 	default:
 		DEBUG_ERROR("fast-classifer: Unknown message type sent!\n");
@@ -783,6 +790,7 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 	struct nf_conntrack_tuple orig_tuple;
 	struct nf_conntrack_tuple reply_tuple;
 	struct sfe_connection *conn;
+ 	SFE_NF_CONN_ACCT(acct);
 
 	/*
 	 * Don't process broadcast or multicast packets.
@@ -846,6 +854,21 @@ static unsigned int fast_classifier_post_routing(struct sk_buff *skb, bool is_v4
 		fast_classifier_incr_exceptions(FAST_CL_EXCEPTION_CT_IS_ALG);
 		DEBUG_TRACE("connection has helper\n");
 		return NF_ACCEPT;
+	}
+
+	/*
+	 * Check if the acceleration of a flow could be rejected quickly.
+	 */
+	acct = nf_conn_acct_find(ct);
+	if (acct) {
+		long long packets = atomic64_read(&SFE_ACCT_COUNTER(acct)[CTINFO2DIR(ctinfo)].packets);
+		if ((packets > 0xff) && (packets & 0xff)) {
+			/*
+			 * Connection hits slow path at least 256 times, so it must be not able to accelerate.
+			 * But we also give it a chance to walk through ECM every 256 packets
+			 */
+			return NF_ACCEPT;
+		}
 	}
 
 	memset(&sic, 0, sizeof(sic));
@@ -1583,7 +1606,7 @@ static ssize_t fast_classifier_get_debug_info(struct device *dev,
 			atomic_read(&offload_no_match_msgs),
 			atomic_read(&offloaded_msgs),
 			atomic_read(&done_msgs),
-			atomic_read(&offloaded_fail_msgs),
+ 			" offloaded=%d done=%d offl_dbg_msg_fail=%d done_dbg_msg_fail=%d\n",
 			atomic_read(&done_fail_msgs));
 	sfe_hash_for_each(fc_conn_ht, i, node, conn, hl) {
 		len += scnprintf(buf + len, PAGE_SIZE - len,
