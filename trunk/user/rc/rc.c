@@ -1331,6 +1331,12 @@ handle_notifications(void)
 			restart_zerotier();
 		}
 #endif
+#if defined(APP_SQM)
+		else if (strcmp(entry->d_name, RCN_RESTART_SQM) == 0)
+		{
+			restart_sqm();
+		}
+#endif
 #if defined(APP_KOOLPROXY)
 		else if (strcmp(entry->d_name, RCN_RESTART_KOOLPROXY) == 0)
 		{

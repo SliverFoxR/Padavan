@@ -21,7 +21,7 @@ clean:
 	$(MAKE) -C $(SRC_NAME) distclean CONFIG_IPV6=y CONFIG_XFRM=y
 
 romfs:
-ifeq ($(CONFIG_FIRMWARE_INCLUDE_QOS),y)
+ifeq ($(CONFIG_FIRMWARE_INCLUDE_SQM),y)
 	$(ROMFSINST) $(THISDIR)/$(SRC_NAME)/tc/tc /bin/tc
 endif
 ifdef CONFIG_IPV6

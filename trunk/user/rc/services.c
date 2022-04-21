@@ -478,6 +478,23 @@ void restart_zerotier(void){
 }
 #endif
 
+#if defined(APP_SQM)
+void stop_sqm(void){
+	eval("/usr/lib/sqm/run.sh","stop");
+}
+
+void start_sqm(void){
+	int sqm_mode = nvram_get_int("sqm_enable");
+	if ( sqm_mode == 1)
+		eval("/usr/lib/sqm/run.sh");
+}
+
+void restart_sqm(void){
+	stop_sqm();
+	start_sqm();
+}
+#endif
+
 #if defined(APP_ADBYBY)
 void stop_adbyby(void){
 	eval("/usr/bin/adbyby.sh","stop");
@@ -863,6 +880,9 @@ stop_services(int stopall)
 #endif
 #if defined(APP_ZEROTIER)
 	stop_zerotier();
+#endif
+#if defined(APP_SQM)
+	stop_sqm();
 #endif
 #if defined(APP_ALIDDNS)
 	stop_aliddns();

@@ -596,6 +596,18 @@ struct nvram_pair router_defaults[] = {
 	{ "vlmcsd_enable", "0" },
 #endif
 
+#if defined(APP_SQM)
+	/*SQM QoS*/
+	{ "sqm_enable", "0" },
+	{ "sqm_active", "eth3" },
+	{ "sqm_down_speed", "0" },
+	{ "sqm_up_speed", "0" },
+	{ "sqm_debug_log", "0" },
+	{ "sqm_log_level", "5" },
+	{ "sqm_qdisc", "fq_codel" },
+	{ "sqm_script", "simple" },
+#endif
+
 #if defined(APP_DNSFORWARDER)
 	/* dns-forwarder */
 	{ "dns_forwarder_enable", "0" },

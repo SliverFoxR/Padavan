@@ -154,6 +154,7 @@ dir_$(CONFIG_FIRMWARE_INCLUDE_TROJAN)	        += trojan
 endif
 dir_$(CONFIG_FIRMWARE_INCLUDE_SSOBFS)			+= simple-obfs
 dir_$(CONFIG_FIRMWARE_INCLUDE_ZEROTIER)			+= zerotier
+dir_$(CONFIG_FIRMWARE_INCLUDE_SQM)				+= sqm-qos
 dir_$(CONFIG_FIRMWARE_INCLUDE_WYY)			+= unblockmusic
 dir_$(OPENSSH_ENABLED)					+= openssh
 dir_$(DROPBEAR_ENABLED)					+= dropbear

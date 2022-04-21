@@ -592,6 +592,11 @@ void stop_zerotier(void);
 void start_zerotier(void);
 void restart_zerotier(void);
 #endif
+#if defined(APP_SQM)
+void stop_sqm(void);
+void start_sqm(void);
+void restart_sqm(void);
+#endif
 #if defined(APP_DNSFORWARDER)
 void stop_dnsforwarder(void);
 void start_dnsforwarder(void);

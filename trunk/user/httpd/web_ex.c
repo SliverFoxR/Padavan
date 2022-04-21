@@ -2324,6 +2324,15 @@ static int zerotier_status_hook(int eid, webs_t wp, int argc, char **argv)
 }
 #endif
 
+#if defined (APP_SQM)
+static int sqm_status_hook(int eid, webs_t wp, int argc, char **argv)
+{
+	int sqm_status_code = system("tc qdisc | grep -w -q `nvram get sqm_qdisc`");
+	websWrite(wp, "function sqm_status() { return %d;}\n", sqm_status_code);
+	return 0;
+}
+#endif
+
 #if defined (APP_FRP)
 static int frpc_status_hook(int eid, webs_t wp, int argc, char **argv)
 {
@@ -2558,6 +2567,11 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 #else
 	int found_app_zerotier = 0;
 #endif
+#if defined(APP_SQM)
+	int found_app_sqm = 1;
+#else
+	int found_app_sqm = 0;
+#endif
 #if defined(APP_ADBYBY)
 	int found_app_adbyby = 1;
 #else
@@ -2771,6 +2785,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		"function found_app_frp() { return %d;}\n"
 		"function found_app_wyy() { return %d;}\n"
 		"function found_app_zerotier() { return %d;}\n"
+		"function found_app_sqm() { return %d;}\n"
 		"function found_app_aliddns() { return %d;}\n"
 		"function found_app_xupnpd() { return %d;}\n"
 		"function found_app_mentohust() { return %d;}\n",
@@ -2802,6 +2817,7 @@ ej_firmware_caps_hook(int eid, webs_t wp, int argc, char **argv)
 		found_app_frp,
 		found_app_wyy,
 		found_app_zerotier,
+		found_app_sqm,
 		found_app_aliddns,
 		found_app_xupnpd,
 		found_app_mentohust
@@ -4577,6 +4593,9 @@ struct ej_handler ej_handlers[] =
 #if defined (APP_KOOLPROXY)
 	{ "koolproxy_action", koolproxy_action_hook},
 	{ "koolproxy_status", koolproxy_status_hook},
+#endif
+#if defined (APP_SQM)
+	{ "sqm_status", sqm_status_hook},
 #endif
 #if defined(APP_DNSFORWARDER)
 	{ "dnsforwarder_status", dnsforwarder_status_hook},

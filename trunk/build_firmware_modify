@@ -38,7 +38,7 @@ echo "CONFIG_FIRMWARE_INCLUDE_KOOLPROXY=n" >> .config #KP广告过滤
 ##DNS服务##
 echo "CONFIG_FIRMWARE_INCLUDE_SMARTDNS=n" >> .config #smartdns
 echo "CONFIG_FIRMWARE_INCLUDE_ADGUARDHOME=n" >> .config #adg DNS去AD
-
+echo "CONFIG_FIRMWARE_INCLUDE_SQM=y" >> .config #SQM
 ##DNS服务##
 
 ##文件管理##
@@ -76,8 +76,14 @@ paragon_hfsplus=0
 
 func_enable_kernel_param()
 {
+	if [ ! -n "$2" ];then
+		own="y"
+	else
+		own="m"
+	fi
+
 	if [ -n "`grep \^\"\# $1 is not set\" $kernel_tf`" ] ; then
-		sed -i "s/\# $1 is not set/$1=y/" $kernel_tf
+		sed -i "s/\# $1 is not set/$1=$own/" $kernel_tf
 	fi
 }
 
@@ -344,6 +350,17 @@ else
 	func_disable_kernel_param "CONFIG_SHORTCUT_FE"
 	func_disable_kernel_param "CONFIG_NF_CONNTRACK_EVENTS"
 	func_disable_kernel_param "CONFIG_NF_CONNTRACK_CHAIN_EVENTS"
+fi
+# SQM QOS
+if [ "$CONFIG_FIRMWARE_INCLUDE_SQM" = "y" ]; then
+	func_enable_kernel_param "CONFIG_NF_CONNTRACK_EVENTS"
+	sed -i "/CONFIG_NF_CONNTRACK_EVENTS=y/a\CONFIG_NF_CONNTRACK_CHAIN_EVENTS=y" $kernel_tf
+	func_enable_kernel_param "CONFIG_NF_CONNTRACK_TIMEOUT"
+	func_enable_kernel_param "CONFIG_NET_SCH_SFQ" "m"
+	sed -i "/CONFIG_NET_SCH_SFQ=m/a\CONFIG_NET_SCH_CAKE=m" $kernel_tf
+	func_enable_kernel_param "CONFIG_NET_SCH_CODEL" "m"
+	func_enable_kernel_param "CONFIG_NET_ACT_IPT" "m"
+	func_enable_kernel_param "CONFIG_IFB"
 fi
 ############################# USB #####################################
 if [ "$CONFIG_FIRMWARE_ENABLE_USB" != "y" ] || [ -z "$CONFIG_USB_SUPPORT" ] ; then
